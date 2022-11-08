@@ -315,7 +315,6 @@ export default class Wow extends React.Component<WowProps, WowState> {
       });
     } catch (e) {
       this.setState({
-        emojiName: "",
         hasError: true,
         hasWowifiedImage: false,
         isUploading: false,
