@@ -143,7 +143,7 @@ export default class Wow extends React.Component<WowProps, WowState> {
             {/* Display wowified image */}
             {hasWowifiedImage ? (
               <img
-                src={`data:image/png;base64,${wowifiedImage.original}`}
+                src={`data:image/gif;base64,${wowifiedImage.original}`}
                 alt="wowified"
                 width={250}
                 height={250}
