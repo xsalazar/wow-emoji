@@ -1,4 +1,4 @@
-import { Box, Link, Stack, Typography } from "@mui/material";
+import { Box, Link, Stack } from "@mui/material";
 import { FileCodeIcon, MentionIcon } from "@primer/octicons-react";
 import React from "react";
 
