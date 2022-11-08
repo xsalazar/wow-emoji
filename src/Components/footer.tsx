@@ -1,4 +1,4 @@
-import { Box, Link, Stack } from "@mui/material";
+import { Box, Link, Stack, Typography } from "@mui/material";
 import { FileCodeIcon, MentionIcon } from "@primer/octicons-react";
 import React from "react";
 
@@ -18,7 +18,7 @@ export default class Footer extends React.Component {
               <MentionIcon size="small" verticalAlign="middle" />
             </Link>
             <Link
-              href="https://github.com/xsalazar/project-template"
+              href="https://github.com/xsalazar/wow-emoji"
               color="textPrimary"
               aria-label="Source Code"
               target="_blank"

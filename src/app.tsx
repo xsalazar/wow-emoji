@@ -1,10 +1,10 @@
 import Footer from "./Components/footer";
-import Body from "./Components/body";
+import Wow from "./Components/wow";
 
 function App() {
   return (
     <div>
-      <Body />
+      <Wow />
       <Footer />
     </div>
   );
