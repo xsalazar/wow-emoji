@@ -170,6 +170,7 @@ export default class Wow extends React.Component<WowProps, WowState> {
                   flexDirection: "column",
                   justifyContent: "center",
                   position: "absolute",
+                  textAlign: "center",
                   zIndex: (theme) => theme.zIndex.drawer + 2,
                 }}
               >
