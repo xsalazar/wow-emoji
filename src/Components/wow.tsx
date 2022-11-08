@@ -14,8 +14,6 @@ import {
 } from "@mui/material";
 import React from "react";
 import axios from "axios";
-import JSZip from "jszip";
-import saveAs from "file-saver";
 
 interface WowProps {}
 interface WowState {
@@ -95,6 +93,7 @@ export default class Wow extends React.Component<WowProps, WowState> {
               alignItems: "center",
               justifyContent: "center",
               pb: 2,
+              position: "relative",
             }}
           >
             {/* Display upload form if nothing has been uploaded */}
@@ -141,6 +140,7 @@ export default class Wow extends React.Component<WowProps, WowState> {
               </Box>
             ) : null}
 
+            {/* Display wowified image */}
             {hasWowifiedImage ? (
               <img
                 src={`data:image/png;base64,${wowifiedImage.original}`}
@@ -148,6 +148,36 @@ export default class Wow extends React.Component<WowProps, WowState> {
                 width={250}
                 height={250}
               />
+            ) : null}
+
+            {/* Loading Overlay */}
+            <Backdrop
+              sx={{
+                color: "#fff",
+                zIndex: (theme) => theme.zIndex.drawer + 1,
+                display: "flex",
+                flexDirection: "column",
+              }}
+              open={isUploading}
+            ></Backdrop>
+
+            {/* Loading Indicator */}
+            {isUploading ? (
+              <Container
+                sx={{
+                  alignItems: "center",
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: "center",
+                  position: "absolute",
+                  zIndex: (theme) => theme.zIndex.drawer + 2,
+                }}
+              >
+                <CircularProgress sx={{ color: loadingColor }} />
+                <Typography sx={{ pt: 2 }} variant="caption" color="white">
+                  {loadingQuote ?? " "}
+                </Typography>
+              </Container>
             ) : null}
           </Box>
 
@@ -169,22 +199,6 @@ export default class Wow extends React.Component<WowProps, WowState> {
             message="🙈 Uh oh, something went wrong -- sorry! Try again soon"
           />
 
-          {/* Loading Indicator */}
-          <Backdrop
-            sx={{
-              color: "#fff",
-              zIndex: (theme) => theme.zIndex.drawer + 1,
-              display: "flex",
-              flexDirection: "column",
-            }}
-            open={isUploading}
-          >
-            <CircularProgress sx={{ color: loadingColor }} />
-            <Typography sx={{ pt: 1 }} variant="caption">
-              {loadingQuote ?? " "}
-            </Typography>
-          </Backdrop>
-
           {/* Wowify Button */}
           {/* Only show if image has been uploaded but not wowified */}
           {hasUploadedImage && !hasWowifiedImage ? (
@@ -193,8 +207,9 @@ export default class Wow extends React.Component<WowProps, WowState> {
                 color="primary"
                 onClick={this.wowifyImage}
                 variant="contained"
+                startIcon={"🌈"}
               >
-                🌈 Wowify Image
+                Wowify Image
               </Button>
             </Box>
           ) : null}
@@ -313,18 +328,13 @@ export default class Wow extends React.Component<WowProps, WowState> {
 
   // Save images to local machine
   async saveImages() {
-    const { emojiName: emojiNameState } = this.state;
-    const { original, small } = this.state.wowifiedImage;
+    const { emojiName } = this.state;
+    const { small } = this.state.wowifiedImage;
 
-    const zip = new JSZip();
-    const emojiName = emojiNameState === "" ? "wow-emoji" : emojiNameState;
-    const emojiZip = zip.folder(emojiName);
-
-    emojiZip?.file(`${emojiName}-original.gif`, original, { base64: true });
-    emojiZip?.file(`${emojiName}-small.gif`, small, { base64: true });
-
-    const archive = await zip.generateAsync({ type: "blob" });
-    saveAs(archive, emojiName);
+    const a = document.createElement("a");
+    a.href = "data:image/gif;base64," + small;
+    a.download = `${emojiName}.gif`;
+    a.click();
   }
 
   // Handler for closing error toast
@@ -386,12 +396,10 @@ export default class Wow extends React.Component<WowProps, WowState> {
       "Replacing blown fuse...",
       "Embiggening prototypes...",
       "Checking the gravitational constant in your locale...",
-      "Please wait while a larger software vendor in Seattle takes over the world",
       "Have a nice day",
       "Upgrading Windows, your PC will restart several times...",
       "🎶 Please enjoy the elevator music 🎵",
       "Would you prefer chicken, steak, or tofu?",
-      "Don't worry - a few bits tried to escape, but we caught them",
       "Testing your patience...",
       "Insert quarter to continue...",
       "Moving satellites into position...",
@@ -420,7 +428,7 @@ export default class Wow extends React.Component<WowProps, WowState> {
       "Downloading more RAM...",
       "Updating to Windows Vista...",
       "Agreeing to Terms and Conditions...",
-      "↑, ↑, ↓, ↓, ←, →, ←, →, B, A",
+      "Entering Konami code...",
       "Do you like the loading animation? I made it myself",
       "The premium plan is faster",
       "You are number 93840 in the queue",
