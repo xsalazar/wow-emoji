@@ -302,7 +302,7 @@ export default class Wow extends React.Component<WowProps, WowState> {
 
     try {
       var response = await axios.put(
-        `https://7125xfgjkh.execute-api.us-west-2.amazonaws.com/`,
+        `http://image-wower-alb-1019418099.us-west-2.elb.amazonaws.com/`,
         originalImageFile
       );
 
