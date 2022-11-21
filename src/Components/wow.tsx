@@ -288,6 +288,8 @@ export default class Wow extends React.Component<WowProps, WowState> {
   async wowifyImage() {
     const { originalImageFile } = this.state;
 
+    if (!originalImageFile) return;
+
     const rgbTimer = setInterval(() => {
       this.generateRGBColor();
     }, 25);
@@ -301,9 +303,12 @@ export default class Wow extends React.Component<WowProps, WowState> {
     });
 
     try {
+      const formData = new FormData();
+      formData.append("image", originalImageFile);
       var response = await axios.put(
         `https://backend.wowemoji.dev/`,
-        originalImageFile
+        formData,
+        { headers: { "Content-Type": "multipart/form-data" } }
       );
 
       this.setState({
