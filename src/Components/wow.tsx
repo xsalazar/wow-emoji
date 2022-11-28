@@ -498,6 +498,7 @@ export default class Wow extends React.Component<WowProps, WowState> {
       hasUploadedImage: false,
       hasWowifiedImage: false,
       isUploading: false,
+      loadingQuote: "",
       originalImage: "",
       wowifiedImage: { original: "", small: "" },
       originalImageFile: undefined,
