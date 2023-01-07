@@ -6,7 +6,13 @@ import {
   Button,
   CircularProgress,
   Container,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
   IconButton,
+  Link,
   Snackbar,
   Stack,
   TextField,
@@ -19,11 +25,13 @@ interface WowProps {}
 interface WowState {
   emojiName: string;
   hasError: boolean;
+  hasSponsorshipPrompt: boolean;
   hasUploadedImage: boolean;
   hasWowifiedImage: boolean;
   isUploading: boolean;
   loadingColor: { color: string; r: number; g: number; b: number };
   loadingQuote: string;
+  numberWowified: number;
   originalImage: string;
   originalImageFile?: File;
   wowifiedImage: {
@@ -39,11 +47,13 @@ export default class Wow extends React.Component<WowProps, WowState> {
     this.state = {
       emojiName: "wow-emoji",
       hasError: false,
+      hasSponsorshipPrompt: false,
       hasUploadedImage: false,
       hasWowifiedImage: false,
       isUploading: false,
       loadingColor: { color: "rgb(255,0,0)", r: 255, g: 0, b: 0 },
       loadingQuote: "",
+      numberWowified: 0,
       originalImage: "",
       wowifiedImage: {
         original: "",
@@ -51,20 +61,22 @@ export default class Wow extends React.Component<WowProps, WowState> {
       },
     };
 
-    this.handleImageUpload = this.handleImageUpload.bind(this);
-    this.handleEmojiNameChange = this.handleEmojiNameChange.bind(this);
-    this.handleErrorClose = this.handleErrorClose.bind(this);
-    this.wowifyImage = this.wowifyImage.bind(this);
-    this.saveImages = this.saveImages.bind(this);
     this.generateRGBColor = this.generateRGBColor.bind(this);
     this.generateFunnyQuote = this.generateFunnyQuote.bind(this);
+    this.handleEmojiNameChange = this.handleEmojiNameChange.bind(this);
+    this.handleErrorClose = this.handleErrorClose.bind(this);
+    this.handleImageUpload = this.handleImageUpload.bind(this);
+    this.handleSponsorshipClose = this.handleSponsorshipClose.bind(this);
     this.restart = this.restart.bind(this);
+    this.saveImages = this.saveImages.bind(this);
+    this.wowifyImage = this.wowifyImage.bind(this);
   }
 
   render() {
     const {
       emojiName,
       hasError,
+      hasSponsorshipPrompt,
       hasUploadedImage,
       hasWowifiedImage,
       isUploading,
@@ -200,6 +212,37 @@ export default class Wow extends React.Component<WowProps, WowState> {
             message="🙈 Uh oh, something went wrong -- sorry! Try again soon"
           />
 
+          {/* Sponsorship Modal */}
+          <Dialog
+            open={hasSponsorshipPrompt}
+            onClose={this.handleSponsorshipClose}
+            maxWidth="xs"
+          >
+            <DialogTitle>Consider Supporting</DialogTitle>
+            <DialogContent>
+              <DialogContentText sx={{ whiteSpace: "pre-line" }}>
+                {`👋 Thank you so much for using this website. I made it to be enjoyed, and I hope you're enjoying it.
+                
+                This is, and always will be, free to use, but it is not free to maintain.
+                
+                Learn more below, or use the link at the bottom of this page at any time.`}
+              </DialogContentText>
+              <DialogActions>
+                <Button onClick={this.handleSponsorshipClose} sx={{ mr: 2 }}>
+                  Close
+                </Button>
+                <Link
+                  href="https://github.com/sponsors/xsalazar"
+                  aria-label="Support Me"
+                  target="_blank"
+                  rel="noopener"
+                >
+                  <Button variant="contained">Support</Button>
+                </Link>
+              </DialogActions>
+            </DialogContent>
+          </Dialog>
+
           {/* Wowify Button */}
           {/* Only show if image has been uploaded but not wowified */}
           {hasUploadedImage && !hasWowifiedImage ? (
@@ -286,9 +329,11 @@ export default class Wow extends React.Component<WowProps, WowState> {
 
   // Upload image to backend for wowification
   async wowifyImage() {
-    const { originalImageFile } = this.state;
+    const { originalImageFile, numberWowified } = this.state;
 
     if (!originalImageFile) return;
+
+    let newNumberWowified = numberWowified + 1;
 
     const rgbTimer = setInterval(() => {
       this.generateRGBColor();
@@ -314,6 +359,7 @@ export default class Wow extends React.Component<WowProps, WowState> {
       this.setState({
         hasWowifiedImage: true,
         isUploading: false,
+        numberWowified: newNumberWowified,
         wowifiedImage: {
           original: response.data.wowifiedOriginal,
           small: response.data.wowifiedSmall,
@@ -324,6 +370,13 @@ export default class Wow extends React.Component<WowProps, WowState> {
         hasError: true,
         hasWowifiedImage: false,
         isUploading: false,
+      });
+    }
+
+    // After 3 successful generations, show the sponsorship prompt
+    if (newNumberWowified === 3) {
+      this.setState({
+        hasSponsorshipPrompt: true,
       });
     }
 
@@ -502,6 +555,13 @@ export default class Wow extends React.Component<WowProps, WowState> {
       originalImage: "",
       wowifiedImage: { original: "", small: "" },
       originalImageFile: undefined,
+    });
+  }
+
+  // Handler for sponsorship dialog
+  handleSponsorshipClose() {
+    this.setState({
+      hasSponsorshipPrompt: false,
     });
   }
 }

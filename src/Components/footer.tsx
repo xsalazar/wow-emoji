@@ -1,5 +1,9 @@
 import { Box, Link, Stack } from "@mui/material";
-import { FileCodeIcon, MentionIcon } from "@primer/octicons-react";
+import {
+  FileCodeIcon,
+  MentionIcon,
+  SponsorTiersIcon,
+} from "@primer/octicons-react";
 import React from "react";
 
 export default class Footer extends React.Component {
@@ -25,6 +29,15 @@ export default class Footer extends React.Component {
               rel="noopener"
             >
               <FileCodeIcon size="small" verticalAlign="middle" />
+            </Link>
+            <Link
+              href="https://github.com/sponsors/xsalazar"
+              color="textPrimary"
+              aria-label="Support Me"
+              target="_blank"
+              rel="noopener"
+            >
+              <SponsorTiersIcon size="small" verticalAlign="middle" />
             </Link>
           </Stack>
         </Box>
