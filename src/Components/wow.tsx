@@ -1,6 +1,6 @@
-import { Close, Download, Replay, Upload } from "@mui/icons-material";
-import { LoadingButton } from "@mui/lab";
+import { Close, Download, Replay } from "@mui/icons-material";
 import {
+  Alert,
   Backdrop,
   Box,
   Button,
@@ -108,8 +108,11 @@ export default class Wow extends React.Component<WowProps, WowState> {
               position: "relative",
             }}
           >
+            <Alert severity="warning">
+              Performing maintenance, we'll be right back!
+            </Alert>
             {/* Display upload form if nothing has been uploaded */}
-            {!hasUploadedImage ? (
+            {/* {!hasUploadedImage ? (
               <label htmlFor="contained-button-file">
                 <input
                   hidden
@@ -128,7 +131,7 @@ export default class Wow extends React.Component<WowProps, WowState> {
                   Upload Image
                 </LoadingButton>
               </label>
-            ) : null}
+            ) : null} */}
 
             {/* Display uploaded image if there's no wowified image */}
             {hasUploadedImage && !hasWowifiedImage ? (
