@@ -1,18 +1,11 @@
-import { Close, Download, Replay } from "@mui/icons-material";
+import { Close, Download, Replay, Upload } from "@mui/icons-material";
 import {
-  Alert,
   Backdrop,
   Box,
   Button,
   CircularProgress,
   Container,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogContentText,
-  DialogTitle,
   IconButton,
-  Link,
   Snackbar,
   Stack,
   TextField,
@@ -20,20 +13,24 @@ import {
 } from "@mui/material";
 import React from "react";
 import axios from "axios";
+import { LoadingButton } from "@mui/lab";
 
 interface WowProps {}
 interface WowState {
   emojiName: string;
   hasError: boolean;
-  hasSponsorshipPrompt: boolean;
   hasUploadedImage: boolean;
   hasWowifiedImage: boolean;
   isUploading: boolean;
   loadingColor: { color: string; r: number; g: number; b: number };
   loadingQuote: string;
-  numberWowified: number;
   originalImage: string;
   originalImageFile?: File;
+  timers: {
+    rgbTimer?: NodeJS.Timer;
+    quoteTimer?: NodeJS.Timer;
+    pollTimer?: NodeJS.Timer;
+  };
   wowifiedImage: {
     original: string;
     small: string;
@@ -47,14 +44,13 @@ export default class Wow extends React.Component<WowProps, WowState> {
     this.state = {
       emojiName: "wow-emoji",
       hasError: false,
-      hasSponsorshipPrompt: false,
       hasUploadedImage: false,
       hasWowifiedImage: false,
       isUploading: false,
       loadingColor: { color: "rgb(255,0,0)", r: 255, g: 0, b: 0 },
       loadingQuote: "",
-      numberWowified: 0,
       originalImage: "",
+      timers: {},
       wowifiedImage: {
         original: "",
         small: "",
@@ -66,7 +62,6 @@ export default class Wow extends React.Component<WowProps, WowState> {
     this.handleEmojiNameChange = this.handleEmojiNameChange.bind(this);
     this.handleErrorClose = this.handleErrorClose.bind(this);
     this.handleImageUpload = this.handleImageUpload.bind(this);
-    this.handleSponsorshipClose = this.handleSponsorshipClose.bind(this);
     this.restart = this.restart.bind(this);
     this.saveImages = this.saveImages.bind(this);
     this.wowifyImage = this.wowifyImage.bind(this);
@@ -76,7 +71,6 @@ export default class Wow extends React.Component<WowProps, WowState> {
     const {
       emojiName,
       hasError,
-      hasSponsorshipPrompt,
       hasUploadedImage,
       hasWowifiedImage,
       isUploading,
@@ -108,11 +102,8 @@ export default class Wow extends React.Component<WowProps, WowState> {
               position: "relative",
             }}
           >
-            <Alert severity="warning">
-              Performing maintenance, we'll be right back!
-            </Alert>
             {/* Display upload form if nothing has been uploaded */}
-            {/* {!hasUploadedImage ? (
+            {!hasUploadedImage ? (
               <label htmlFor="contained-button-file">
                 <input
                   hidden
@@ -131,7 +122,7 @@ export default class Wow extends React.Component<WowProps, WowState> {
                   Upload Image
                 </LoadingButton>
               </label>
-            ) : null} */}
+            ) : null}
 
             {/* Display uploaded image if there's no wowified image */}
             {hasUploadedImage && !hasWowifiedImage ? (
@@ -214,37 +205,6 @@ export default class Wow extends React.Component<WowProps, WowState> {
             autoHideDuration={4000}
             message="🙈 Uh oh, something went wrong -- sorry! Try again soon"
           />
-
-          {/* Sponsorship Modal */}
-          <Dialog
-            open={hasSponsorshipPrompt}
-            onClose={this.handleSponsorshipClose}
-            maxWidth="xs"
-          >
-            <DialogTitle>Consider Supporting</DialogTitle>
-            <DialogContent>
-              <DialogContentText sx={{ whiteSpace: "pre-line" }}>
-                {`👋 Thank you so much for using this website. I made it to be enjoyed, and I hope you're enjoying it.
-                
-                This is, and always will be, free to use, but it is not free to maintain.
-                
-                Learn more below, or use the link at the bottom of this page at any time.`}
-              </DialogContentText>
-              <DialogActions>
-                <Button onClick={this.handleSponsorshipClose} sx={{ mr: 2 }}>
-                  Close
-                </Button>
-                <Link
-                  href="https://github.com/sponsors/xsalazar"
-                  aria-label="Support Me"
-                  target="_blank"
-                  rel="noopener"
-                >
-                  <Button variant="contained">Support</Button>
-                </Link>
-              </DialogActions>
-            </DialogContent>
-          </Dialog>
 
           {/* Wowify Button */}
           {/* Only show if image has been uploaded but not wowified */}
@@ -332,11 +292,9 @@ export default class Wow extends React.Component<WowProps, WowState> {
 
   // Upload image to backend for wowification
   async wowifyImage() {
-    const { originalImageFile, numberWowified } = this.state;
+    const { originalImageFile } = this.state;
 
     if (!originalImageFile) return;
-
-    let newNumberWowified = numberWowified + 1;
 
     const rgbTimer = setInterval(() => {
       this.generateRGBColor();
@@ -348,43 +306,44 @@ export default class Wow extends React.Component<WowProps, WowState> {
 
     this.setState({
       isUploading: true,
+      timers: {
+        ...this.state.timers,
+        rgbTimer: rgbTimer,
+        quoteTimer: quoteTimer,
+      },
     });
 
     try {
-      const formData = new FormData();
-      formData.append("image", originalImageFile);
       var response = await axios.put(
         `https://backend.wowemoji.dev/`,
-        formData,
-        { headers: { "Content-Type": "multipart/form-data" } }
+        originalImageFile
       );
 
+      // Use this token to poll the backend API for result
+      var token = response.data.token;
+
+      const pollTimer = setInterval(() => {
+        this.pollWowifiedAPI(token);
+      }, 5000);
+
       this.setState({
-        hasWowifiedImage: true,
-        isUploading: false,
-        numberWowified: newNumberWowified,
-        wowifiedImage: {
-          original: response.data.wowifiedOriginal,
-          small: response.data.wowifiedSmall,
+        timers: {
+          ...this.state.timers,
+          pollTimer: pollTimer,
         },
       });
     } catch (e) {
+      // There was an error submitting image to backend, clear timers and reset state
       this.setState({
         hasError: true,
         hasWowifiedImage: false,
         isUploading: false,
       });
-    }
 
-    // After 3 successful generations, show the sponsorship prompt
-    if (newNumberWowified === 3) {
-      this.setState({
-        hasSponsorshipPrompt: true,
-      });
+      clearInterval(rgbTimer);
+      clearInterval(quoteTimer);
+      clearInterval(this.state.timers.pollTimer);
     }
-
-    clearInterval(rgbTimer);
-    clearInterval(quoteTimer);
   }
 
   // Save images to local machine
@@ -393,8 +352,8 @@ export default class Wow extends React.Component<WowProps, WowState> {
     const { small } = this.state.wowifiedImage;
 
     const a = document.createElement("a");
-    a.href = "data:image/gif;base64," + small;
-    a.download = `${emojiName}.gif`;
+    a.href = "data:image/webp;base64," + small;
+    a.download = `${emojiName}.webp`;
     a.click();
   }
 
@@ -403,6 +362,46 @@ export default class Wow extends React.Component<WowProps, WowState> {
     this.setState({
       hasError: false,
     });
+  }
+
+  // Poll backend API for result
+  async pollWowifiedAPI(token: string) {
+    const { rgbTimer, quoteTimer, pollTimer } = this.state.timers;
+
+    try {
+      var response = await axios.get(`https://backend.wowemoji.dev`, {
+        params: { wowToken: token },
+        validateStatus: (status: number) => {
+          return status === 200 || status === 404;
+        },
+      });
+
+      // Image was processed 🎉
+      if (response.status === 200) {
+        this.setState({
+          hasWowifiedImage: true,
+          isUploading: false,
+          wowifiedImage: {
+            original: response.data.wowifiedOriginal,
+            small: response.data.wowifiedSmall,
+          },
+        });
+
+        clearInterval(rgbTimer);
+        clearInterval(quoteTimer);
+        clearInterval(pollTimer);
+      }
+    } catch (e) {
+      this.setState({
+        hasError: true,
+        hasWowifiedImage: false,
+        isUploading: false,
+      });
+
+      clearInterval(rgbTimer);
+      clearInterval(quoteTimer);
+      clearInterval(pollTimer);
+    }
   }
 
   // RGB generator for loading icon
@@ -558,13 +557,6 @@ export default class Wow extends React.Component<WowProps, WowState> {
       originalImage: "",
       wowifiedImage: { original: "", small: "" },
       originalImageFile: undefined,
-    });
-  }
-
-  // Handler for sponsorship dialog
-  handleSponsorshipClose() {
-    this.setState({
-      hasSponsorshipPrompt: false,
     });
   }
 }
