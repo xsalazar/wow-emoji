@@ -1,4 +1,4 @@
-import { Close, Download, Replay, Upload } from "@mui/icons-material";
+import { Clear, Close, Download, Upload } from "@mui/icons-material";
 import {
   Backdrop,
   Box,
@@ -18,6 +18,7 @@ import { LoadingButton } from "@mui/lab";
 interface WowProps {}
 interface WowState {
   emojiName: string;
+  errorMessage: string;
   hasError: boolean;
   hasUploadedImage: boolean;
   hasWowifiedImage: boolean;
@@ -43,6 +44,7 @@ export default class Wow extends React.Component<WowProps, WowState> {
 
     this.state = {
       emojiName: "wow-emoji",
+      errorMessage: "",
       hasError: false,
       hasUploadedImage: false,
       hasWowifiedImage: false,
@@ -70,6 +72,7 @@ export default class Wow extends React.Component<WowProps, WowState> {
   render() {
     const {
       emojiName,
+      errorMessage,
       hasError,
       hasUploadedImage,
       hasWowifiedImage,
@@ -197,13 +200,13 @@ export default class Wow extends React.Component<WowProps, WowState> {
                 color="inherit"
                 onClick={this.handleErrorClose}
               >
-                <Close fontSize="small" />
+                <Clear fontSize="small" />
               </IconButton>
             }
             open={hasError}
             onClose={this.handleErrorClose}
             autoHideDuration={4000}
-            message="🙈 Uh oh, something went wrong -- sorry! Try again soon"
+            message={errorMessage}
           />
 
           {/* Wowify Button */}
@@ -252,14 +255,31 @@ export default class Wow extends React.Component<WowProps, WowState> {
                 >
                   Download
                 </Button>
+
                 {/* Reset Button */}
                 <Button
                   color="error"
                   variant="contained"
                   onClick={this.restart}
-                  startIcon={<Replay aria-label="restart" />}
+                  startIcon={<Clear aria-label="restart" />}
                 >
                   Restart
+                </Button>
+              </Stack>
+              <Stack
+                direction="row"
+                spacing={2}
+                justifyContent="center"
+                alignItems="center"
+                sx={{ pt: 2 }}
+              >
+                <Button
+                  color="secondary"
+                  onClick={this.wowifyImage}
+                  variant="contained"
+                  startIcon={"🌈"}
+                >
+                  Rewowify Image
                 </Button>
               </Stack>
             </Box>
@@ -272,6 +292,15 @@ export default class Wow extends React.Component<WowProps, WowState> {
   // Upload image to website and store information
   async handleImageUpload(event: React.FormEvent<HTMLInputElement>) {
     if (event.currentTarget.files === null) {
+      return;
+    }
+
+    const fileSizeKiloBytes = event.currentTarget.files[0].size / 1000;
+    if (fileSizeKiloBytes > 5000) {
+      this.setState({
+        hasError: true,
+        errorMessage: "🙊 Oh no, your file is larger than 5MB!",
+      });
       return;
     }
 
@@ -306,6 +335,7 @@ export default class Wow extends React.Component<WowProps, WowState> {
 
     this.setState({
       isUploading: true,
+      loadingQuote: "",
       timers: {
         ...this.state.timers,
         rgbTimer: rgbTimer,
@@ -335,6 +365,7 @@ export default class Wow extends React.Component<WowProps, WowState> {
     } catch (e) {
       // There was an error submitting image to backend, clear timers and reset state
       this.setState({
+        errorMessage: "🙈 Uh oh, something went wrong -- sorry! Try again soon",
         hasError: true,
         hasWowifiedImage: false,
         isUploading: false,
@@ -538,6 +569,18 @@ export default class Wow extends React.Component<WowProps, WowState> {
       "🤍",
       "🤖",
       "🎷🐛",
+      "Adding more loading messages...",
+      "Asking ChatGPT for more jokes...",
+      "Applying for Chapter 9 Bankruptcy...",
+      "Adding more fuel to the wowifier...",
+      "Taking a 10-day digital detox in French Polynesia...",
+      "(* ^ ω ^)",
+      "٩(◕‿◕｡)۶",
+      "(≧◡≦)",
+      "(◕‿◕)",
+      "(ﾉ◕ヮ◕)ﾉ*:･ﾟ✧",
+      "(๑˃ᴗ˂)ﻭ",
+      "(.❛ ᴗ ❛.)",
     ];
 
     this.setState({
