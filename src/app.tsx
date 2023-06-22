@@ -3,7 +3,14 @@ import Wow from "./Components/wow";
 
 function App() {
   return (
-    <div>
+    <div
+      style={{
+        minHeight: "100dvh",
+        maxHeight: "100dvh",
+        display: "flex",
+        flexDirection: "column",
+      }}
+    >
       <Wow />
       <Footer />
     </div>

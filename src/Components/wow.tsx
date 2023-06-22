@@ -84,208 +84,207 @@ export default class Wow extends React.Component<WowProps, WowState> {
     } = this.state;
 
     return (
-      <div style={{ height: "calc(100vh - 200px)" }}>
-        <Container
-          maxWidth="xl"
+      <Container
+        maxWidth="xl"
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "100%",
+          flexDirection: "column",
+          flexGrow: "1",
+        }}
+      >
+        {/* Upload / Display */}
+        <Box
           sx={{
             display: "flex",
-            justifyContent: "center",
             alignItems: "center",
-            height: "100%",
-            flexDirection: "column",
+            justifyContent: "center",
+            pb: 2,
+            position: "relative",
           }}
         >
-          {/* Upload / Display */}
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              pb: 2,
-              position: "relative",
-            }}
-          >
-            {/* Display upload form if nothing has been uploaded */}
-            {!hasUploadedImage ? (
-              <label htmlFor="contained-button-file">
-                <input
-                  hidden
-                  accept="image/*"
-                  id="contained-button-file"
-                  type="file"
-                  onChange={this.handleImageUpload}
-                />
-                <LoadingButton
-                  variant="contained"
-                  component="span"
-                  loading={isUploading}
-                  startIcon={<Upload />}
-                  loadingPosition="start"
-                >
-                  Upload Image
-                </LoadingButton>
-              </label>
-            ) : null}
+          {/* Display upload form if nothing has been uploaded */}
+          {!hasUploadedImage ? (
+            <label htmlFor="contained-button-file">
+              <input
+                hidden
+                accept="image/*"
+                id="contained-button-file"
+                type="file"
+                onChange={this.handleImageUpload}
+              />
+              <LoadingButton
+                variant="contained"
+                component="span"
+                loading={isUploading}
+                startIcon={<Upload />}
+                loadingPosition="start"
+              >
+                Upload Image
+              </LoadingButton>
+            </label>
+          ) : null}
 
-            {/* Display uploaded image if there's no wowified image */}
-            {hasUploadedImage && !hasWowifiedImage ? (
-              <Box sx={{ position: "relative" }}>
-                {/* Uploaded image */}
-                <img
-                  src={originalImage}
-                  alt="uploaded"
-                  style={{ objectFit: "cover" }}
-                  width={250}
-                  height={250}
-                />
-
-                {/* Overlay restart button */}
-                <IconButton
-                  sx={{ position: "absolute", right: "0px" }}
-                  onClick={this.restart}
-                >
-                  <Close />
-                </IconButton>
-              </Box>
-            ) : null}
-
-            {/* Display wowified image */}
-            {hasWowifiedImage ? (
+          {/* Display uploaded image if there's no wowified image */}
+          {hasUploadedImage && !hasWowifiedImage ? (
+            <Box sx={{ position: "relative" }}>
+              {/* Uploaded image */}
               <img
-                src={`data:image/gif;base64,${wowifiedImage.original}`}
-                alt="wowified"
+                src={originalImage}
+                alt="uploaded"
+                style={{ objectFit: "cover" }}
                 width={250}
                 height={250}
               />
-            ) : null}
 
-            {/* Loading Overlay */}
-            <Backdrop
+              {/* Overlay restart button */}
+              <IconButton
+                sx={{ position: "absolute", right: "0px" }}
+                onClick={this.restart}
+              >
+                <Close />
+              </IconButton>
+            </Box>
+          ) : null}
+
+          {/* Display wowified image */}
+          {hasWowifiedImage ? (
+            <img
+              src={`data:image/gif;base64,${wowifiedImage.original}`}
+              alt="wowified"
+              width={250}
+              height={250}
+            />
+          ) : null}
+
+          {/* Loading Overlay */}
+          <Backdrop
+            sx={{
+              color: "#fff",
+              zIndex: (theme) => theme.zIndex.drawer + 1,
+              display: "flex",
+              flexDirection: "column",
+            }}
+            open={isUploading}
+          ></Backdrop>
+
+          {/* Loading Indicator */}
+          {isUploading ? (
+            <Container
               sx={{
-                color: "#fff",
-                zIndex: (theme) => theme.zIndex.drawer + 1,
+                alignItems: "center",
                 display: "flex",
                 flexDirection: "column",
+                justifyContent: "center",
+                position: "absolute",
+                textAlign: "center",
+                zIndex: (theme) => theme.zIndex.drawer + 2,
               }}
-              open={isUploading}
-            ></Backdrop>
+            >
+              <CircularProgress sx={{ color: loadingColor }} />
+              <Typography sx={{ pt: 2 }} variant="caption" color="white">
+                {loadingQuote ?? " "}
+              </Typography>
+            </Container>
+          ) : null}
+        </Box>
 
-            {/* Loading Indicator */}
-            {isUploading ? (
-              <Container
-                sx={{
-                  alignItems: "center",
-                  display: "flex",
-                  flexDirection: "column",
-                  justifyContent: "center",
-                  position: "absolute",
-                  textAlign: "center",
-                  zIndex: (theme) => theme.zIndex.drawer + 2,
-                }}
-              >
-                <CircularProgress sx={{ color: loadingColor }} />
-                <Typography sx={{ pt: 2 }} variant="caption" color="white">
-                  {loadingQuote ?? " "}
-                </Typography>
-              </Container>
-            ) : null}
+        {/* Error Toast */}
+        <Snackbar
+          action={
+            <IconButton
+              size="small"
+              aria-label="close"
+              color="inherit"
+              onClick={this.handleErrorClose}
+            >
+              <Clear fontSize="small" />
+            </IconButton>
+          }
+          open={hasError}
+          onClose={this.handleErrorClose}
+          autoHideDuration={4000}
+          message={errorMessage}
+        />
+
+        {/* Wowify Button */}
+        {/* Only show if image has been uploaded but not wowified */}
+        {hasUploadedImage && !hasWowifiedImage ? (
+          <Box sx={{ display: "flex", justifyContent: "center", pt: 2 }}>
+            <Button
+              color="primary"
+              onClick={this.wowifyImage}
+              variant="contained"
+              startIcon={"🌈"}
+            >
+              Wowify Image
+            </Button>
           </Box>
+        ) : null}
 
-          {/* Error Toast */}
-          <Snackbar
-            action={
-              <IconButton
-                size="small"
-                aria-label="close"
-                color="inherit"
-                onClick={this.handleErrorClose}
-              >
-                <Clear fontSize="small" />
-              </IconButton>
-            }
-            open={hasError}
-            onClose={this.handleErrorClose}
-            autoHideDuration={4000}
-            message={errorMessage}
-          />
+        {/* Emoji Name and Download */}
+        {/* Only show if image has been wowified */}
+        {hasWowifiedImage ? (
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "center",
+              pt: 2,
+            }}
+          >
+            {/* Emoji Name */}
+            <TextField
+              id="standard-basic"
+              label=":emoji-name:"
+              variant="outlined"
+              size="small"
+              value={emojiName}
+              onChange={this.handleEmojiNameChange}
+            />
 
-          {/* Wowify Button */}
-          {/* Only show if image has been uploaded but not wowified */}
-          {hasUploadedImage && !hasWowifiedImage ? (
-            <Box sx={{ display: "flex", justifyContent: "center", pt: 2 }}>
+            <Stack direction="row" spacing={2} sx={{ pt: 2 }}>
+              {/* Download Button */}
               <Button
                 color="primary"
+                variant="contained"
+                onClick={this.saveImages}
+                startIcon={<Download aria-label="download" />}
+              >
+                Download
+              </Button>
+
+              {/* Reset Button */}
+              <Button
+                color="error"
+                variant="contained"
+                onClick={this.restart}
+                startIcon={<Clear aria-label="restart" />}
+              >
+                Restart
+              </Button>
+            </Stack>
+            <Stack
+              direction="row"
+              spacing={2}
+              justifyContent="center"
+              alignItems="center"
+              sx={{ pt: 2 }}
+            >
+              <Button
+                color="secondary"
                 onClick={this.wowifyImage}
                 variant="contained"
                 startIcon={"🌈"}
               >
-                Wowify Image
+                Rewowify Image
               </Button>
-            </Box>
-          ) : null}
-
-          {/* Emoji Name and Download */}
-          {/* Only show if image has been wowified */}
-          {hasWowifiedImage ? (
-            <Box
-              sx={{
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "center",
-                pt: 2,
-              }}
-            >
-              {/* Emoji Name */}
-              <TextField
-                id="standard-basic"
-                label=":emoji-name:"
-                variant="outlined"
-                size="small"
-                value={emojiName}
-                onChange={this.handleEmojiNameChange}
-              />
-
-              <Stack direction="row" spacing={2} sx={{ pt: 2 }}>
-                {/* Download Button */}
-                <Button
-                  color="primary"
-                  variant="contained"
-                  onClick={this.saveImages}
-                  startIcon={<Download aria-label="download" />}
-                >
-                  Download
-                </Button>
-
-                {/* Reset Button */}
-                <Button
-                  color="error"
-                  variant="contained"
-                  onClick={this.restart}
-                  startIcon={<Clear aria-label="restart" />}
-                >
-                  Restart
-                </Button>
-              </Stack>
-              <Stack
-                direction="row"
-                spacing={2}
-                justifyContent="center"
-                alignItems="center"
-                sx={{ pt: 2 }}
-              >
-                <Button
-                  color="secondary"
-                  onClick={this.wowifyImage}
-                  variant="contained"
-                  startIcon={"🌈"}
-                >
-                  Rewowify Image
-                </Button>
-              </Stack>
-            </Box>
-          ) : null}
-        </Container>
-      </div>
+            </Stack>
+          </Box>
+        ) : null}
+      </Container>
     );
   }
 
