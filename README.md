@@ -1,6 +1,6 @@
 # 🌈 Wow Emoji
 
-This repository contains the source code for the website [https://wowemoji.dev](https://wowemoji.dev) and was bootstrapped using [`create-react-app`](https://github.com/facebook/create-react-app).
+This repository contains the source code for the website [https://wowemoji.dev](https://wowemoji.dev).
 
 This website allows for automated and quick creation of `:wow:` emoji, frequently and joyfully used at Slack. These emoji are used to celebrate and uplift coworkers that make you say "wow". They're colorful, they're animated, and they're delightful.
 
