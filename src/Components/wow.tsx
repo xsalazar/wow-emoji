@@ -1,11 +1,22 @@
-import { Clear, Close, Download, Upload } from "@mui/icons-material";
+import {
+  CheckCircleTwoTone,
+  Clear,
+  Close,
+  Download,
+  Settings,
+  Upload,
+} from "@mui/icons-material";
 import {
   Backdrop,
   Box,
   Button,
   CircularProgress,
   Container,
+  Grid,
   IconButton,
+  ImageList,
+  ImageListItem,
+  Modal,
   Snackbar,
   Stack,
   TextField,
@@ -14,6 +25,7 @@ import {
 import React from "react";
 import axios from "axios";
 import { LoadingButton } from "@mui/lab";
+import diceAnimation from "./dice.gif";
 
 interface WowProps {}
 interface WowState {
@@ -36,7 +48,23 @@ interface WowState {
     original: string;
     small: string;
   };
+  wowifySettings: {
+    isModalOpen: boolean;
+    selectedBackground: string;
+    thumbnails: { [key: string]: string };
+  };
 }
+
+const modalStyle = {
+  position: "absolute" as "absolute",
+  top: "50%",
+  left: "50%",
+  transform: "translate(-50%, -50%)",
+  width: 300,
+  bgcolor: "background.paper",
+  boxShadow: 24,
+  p: 2,
+};
 
 export default class Wow extends React.Component<WowProps, WowState> {
   constructor(props: WowProps) {
@@ -57,6 +85,11 @@ export default class Wow extends React.Component<WowProps, WowState> {
         original: "",
         small: "",
       },
+      wowifySettings: {
+        isModalOpen: false,
+        selectedBackground: "",
+        thumbnails: {},
+      },
     };
 
     this.generateRGBColor = this.generateRGBColor.bind(this);
@@ -64,9 +97,30 @@ export default class Wow extends React.Component<WowProps, WowState> {
     this.handleEmojiNameChange = this.handleEmojiNameChange.bind(this);
     this.handleErrorClose = this.handleErrorClose.bind(this);
     this.handleImageUpload = this.handleImageUpload.bind(this);
+    this.handleSettingsModalOpen = this.handleSettingsModalOpen.bind(this);
+    this.handleSettingsModalClose = this.handleSettingsModalClose.bind(this);
+    this.handleSettingsModalSetBackground =
+      this.handleSettingsModalSetBackground.bind(this);
     this.restart = this.restart.bind(this);
     this.saveImages = this.saveImages.bind(this);
     this.wowifyImage = this.wowifyImage.bind(this);
+  }
+
+  // Grab the thumbnails from the backend
+  async componentDidMount(): Promise<void> {
+    var response = await axios.get(`https://backend.wowemoji.dev`, {
+      params: { thumbnails: true },
+      validateStatus: (status: number) => {
+        return status === 200 || status === 404;
+      },
+    });
+
+    this.setState({
+      wowifySettings: {
+        ...this.state.wowifySettings,
+        thumbnails: response.data.thumbnails,
+      },
+    });
   }
 
   render() {
@@ -81,6 +135,7 @@ export default class Wow extends React.Component<WowProps, WowState> {
       loadingQuote,
       originalImage,
       wowifiedImage,
+      wowifySettings,
     } = this.state;
 
     return (
@@ -209,6 +264,109 @@ export default class Wow extends React.Component<WowProps, WowState> {
           message={errorMessage}
         />
 
+        {/* Settings Modal */}
+        <Modal
+          open={wowifySettings.isModalOpen}
+          onClose={this.handleSettingsModalClose}
+        >
+          <Box sx={modalStyle}>
+            <Grid container>
+              {/* Header: Title and Close Icon */}
+              <Grid item container xs={12} sx={{ pb: 1 }}>
+                {/* Title */}
+                <Grid item xs={10} sx={{ pl: 1 }} alignSelf="center">
+                  <Typography>Select background</Typography>
+                </Grid>
+                {/* Close Icon */}
+                <Grid
+                  item
+                  container
+                  xs={2}
+                  justifyContent="flex-end"
+                  alignSelf="center"
+                >
+                  <IconButton onClick={this.handleSettingsModalClose}>
+                    <Close />
+                  </IconButton>
+                </Grid>
+              </Grid>
+
+              {/* Image List */}
+              <Grid item container xs={12}>
+                <ImageList
+                  cols={3}
+                  rowHeight={96}
+                  sx={{ height: 328, width: "100%" }}
+                >
+                  {/* Random Option (default) */}
+                  <ImageListItem
+                    sx={{
+                      position: "relative",
+                      "&:hover": {
+                        bgcolor: "white",
+                        opacity: 0.5,
+                      },
+                    }}
+                  >
+                    <img
+                      src={diceAnimation}
+                      alt="🎲"
+                      style={{
+                        width: "100%",
+                        position: "absolute",
+                        opacity:
+                          wowifySettings.selectedBackground === "" ? 0.6 : 1,
+                      }}
+                      onClick={() => {
+                        this.handleSettingsModalSetBackground("");
+                      }}
+                    />
+                    {wowifySettings.selectedBackground === "" ? (
+                      <CheckCircleTwoTone sx={{ position: "absolute" }} />
+                    ) : null}
+                  </ImageListItem>
+
+                  {/* Available GIFs on the backend */}
+                  {Object.entries(wowifySettings.thumbnails).map(
+                    ([key, value]) => {
+                      return (
+                        <ImageListItem
+                          sx={{
+                            position: "relative",
+                            "&:hover": {
+                              bgcolor: "gray",
+                              opacity: 0.5,
+                            },
+                          }}
+                        >
+                          <img
+                            src={`data:image/png;base64,${value}`}
+                            alt="thumbnail"
+                            style={{
+                              height: "100%",
+                              position: "absolute",
+                              opacity:
+                                wowifySettings.selectedBackground === key
+                                  ? 0.6
+                                  : 1,
+                            }}
+                            onClick={() => {
+                              this.handleSettingsModalSetBackground(key);
+                            }}
+                          />
+                          {wowifySettings.selectedBackground === key ? (
+                            <CheckCircleTwoTone sx={{ position: "absolute" }} />
+                          ) : null}
+                        </ImageListItem>
+                      );
+                    }
+                  )}
+                </ImageList>
+              </Grid>
+            </Grid>
+          </Box>
+        </Modal>
+
         {/* Wowify Button */}
         {/* Only show if image has been uploaded but not wowified */}
         {hasUploadedImage && !hasWowifiedImage ? (
@@ -221,6 +379,17 @@ export default class Wow extends React.Component<WowProps, WowState> {
             >
               Wowify Image
             </Button>
+            <IconButton
+              sx={{ ml: 1 }}
+              onClick={this.handleSettingsModalOpen}
+              color={
+                wowifySettings.selectedBackground === ""
+                  ? "default"
+                  : "secondary"
+              }
+            >
+              <Settings />
+            </IconButton>
           </Box>
         ) : null}
 
@@ -266,22 +435,26 @@ export default class Wow extends React.Component<WowProps, WowState> {
                 Restart
               </Button>
             </Stack>
-            <Stack
-              direction="row"
-              spacing={2}
-              justifyContent="center"
-              alignItems="center"
-              sx={{ pt: 2 }}
-            >
-              <Button
-                color="secondary"
-                onClick={this.wowifyImage}
-                variant="contained"
-                startIcon={"🌈"}
+
+            {/* Only show Rewowify if you selected the random background option */}
+            {wowifySettings.selectedBackground === "" ? (
+              <Stack
+                direction="row"
+                spacing={2}
+                justifyContent="center"
+                alignItems="center"
+                sx={{ pt: 2 }}
               >
-                Rewowify Image
-              </Button>
-            </Stack>
+                <Button
+                  color="secondary"
+                  onClick={this.wowifyImage}
+                  variant="contained"
+                  startIcon={"🎲"}
+                >
+                  Rewowify Image
+                </Button>
+              </Stack>
+            ) : null}
           </Box>
         ) : null}
       </Container>
@@ -320,7 +493,7 @@ export default class Wow extends React.Component<WowProps, WowState> {
 
   // Upload image to backend for wowification
   async wowifyImage() {
-    const { originalImageFile } = this.state;
+    const { originalImageFile, wowifySettings } = this.state;
 
     if (!originalImageFile) return;
 
@@ -345,7 +518,8 @@ export default class Wow extends React.Component<WowProps, WowState> {
     try {
       var response = await axios.put(
         `https://backend.wowemoji.dev/`,
-        originalImageFile
+        originalImageFile,
+        { params: { backgroundId: wowifySettings.selectedBackground } }
       );
 
       // Use this token to poll the backend API for result
@@ -599,6 +773,25 @@ export default class Wow extends React.Component<WowProps, WowState> {
       originalImage: "",
       wowifiedImage: { original: "", small: "" },
       originalImageFile: undefined,
+    });
+  }
+
+  // Handle settings modal open
+  handleSettingsModalOpen() {
+    this.setState({
+      wowifySettings: { ...this.state.wowifySettings, isModalOpen: true },
+    });
+  }
+
+  handleSettingsModalClose() {
+    this.setState({
+      wowifySettings: { ...this.state.wowifySettings, isModalOpen: false },
+    });
+  }
+
+  handleSettingsModalSetBackground(key: string) {
+    this.setState({
+      wowifySettings: { ...this.state.wowifySettings, selectedBackground: key },
     });
   }
 }
