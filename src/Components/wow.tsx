@@ -648,6 +648,8 @@ export default class Wow extends React.Component<WowProps, WowState> {
 
   // Quotes displayed during loading screen
   generateFunnyQuote() {
+    const randomNumber = Math.floor(Math.random() * 1024);
+    const securityCode = Math.floor(Math.random() * 999999);
     const quotes = [
       "Made with 🧡 for Slack",
       "Reticulating splines...",
@@ -695,7 +697,7 @@ export default class Wow extends React.Component<WowProps, WowState> {
       "Entering Konami code...",
       "Do you like the loading animation? I made it myself",
       "The premium plan is faster",
-      "You are number 93840 in the queue",
+      `You are number ${randomNumber} in the queue`,
       "TODO: Insert elevator music",
       "Discovering new ways of making you wait...",
       "Hacking the mainframe...",
@@ -754,6 +756,17 @@ export default class Wow extends React.Component<WowProps, WowState> {
       "(ﾉ◕ヮ◕)ﾉ*:･ﾟ✧",
       "(๑˃ᴗ˂)ﻭ",
       "(.❛ ᴗ ❛.)",
+      "You look nice today",
+      "Asking Bezos for more AWS credits...",
+      "Billing your credit card...",
+      "Wowifying the wowifier...",
+      "Randomizing the randomizer...",
+      "Recovering your lost data...",
+      `Here's your security code: ${securityCode}`,
+      "Retrieving shipping information...",
+      `${randomNumber} bits processed`,
+      "Reallocating skill points...",
+      `Approximately ${randomNumber} hours remaining`,
     ];
 
     this.setState({
