@@ -27,7 +27,7 @@
     "@mui/lab": "^5.0.0-alpha.173",
     "@mui/material": "^5.16.7",
     "@primer/octicons-react": "^19.11.0",
-    "@types/react": "^18.3.6",
+    "@types/react": "^18.3.7",
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react": "^4.3.1",
     "axios": "^1.7.7",
