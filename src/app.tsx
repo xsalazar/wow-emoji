@@ -1,6 +1,5 @@
-import Body from "./Components/brb";
 import Footer from "./Components/footer";
-// import Wow from "./Components/wow";
+import Wow from "./Components/wow";
 
 function App() {
   return (
@@ -12,8 +11,7 @@ function App() {
         flexDirection: "column",
       }}
     >
-      {/* <Wow /> */}
-      <Body />
+      <Wow />
       <Footer />
     </div>
   );
