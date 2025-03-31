@@ -40,9 +40,9 @@ interface WowState {
   originalImage: string;
   originalImageFile?: File;
   timers: {
-    rgbTimer?: NodeJS.Timer;
-    quoteTimer?: NodeJS.Timer;
-    pollTimer?: NodeJS.Timer;
+    rgbTimer?: ReturnType<typeof setTimeout>;
+    quoteTimer?: ReturnType<typeof setTimeout>;
+    pollTimer?: ReturnType<typeof setTimeout>;
   };
   wowifiedImage: {
     original: string;
@@ -272,16 +272,15 @@ export default class Wow extends React.Component<WowProps, WowState> {
           <Box sx={modalStyle}>
             <Grid container>
               {/* Header: Title and Close Icon */}
-              <Grid item container xs={12} sx={{ pb: 1 }}>
+              <Grid container size={12} sx={{ pb: 1 }}>
                 {/* Title */}
-                <Grid item xs={10} sx={{ pl: 1 }} alignSelf="center">
+                <Grid size={10} sx={{ pl: 1 }} alignSelf="center">
                   <Typography>Select background</Typography>
                 </Grid>
                 {/* Close Icon */}
                 <Grid
-                  item
                   container
-                  xs={2}
+                  size={2}
                   justifyContent="flex-end"
                   alignSelf="center"
                 >
@@ -292,7 +291,7 @@ export default class Wow extends React.Component<WowProps, WowState> {
               </Grid>
 
               {/* Image List */}
-              <Grid item container xs={12}>
+              <Grid container size={12}>
                 <ImageList
                   cols={3}
                   rowHeight={96}
