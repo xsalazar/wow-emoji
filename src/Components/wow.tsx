@@ -6,24 +6,54 @@ import {
   Settings,
   Upload,
 } from "@mui/icons-material";
-import { LoadingButton } from "@mui/lab";
-import Backdrop from "@mui/material/Backdrop";
-import Box from "@mui/material/Box";
-import Button from "@mui/material/Button";
-import CircularProgress from "@mui/material/CircularProgress";
-import Container from "@mui/material/Container";
-import Grid from "@mui/material/Grid";
-import IconButton from "@mui/material/IconButton";
-import ImageList from "@mui/material/ImageList";
-import ImageListItem from "@mui/material/ImageListItem";
-import Modal from "@mui/material/Modal";
-import Snackbar from "@mui/material/Snackbar";
-import Stack from "@mui/material/Stack";
-import TextField from "@mui/material/TextField";
-import Typography from "@mui/material/Typography";
+import {
+  Backdrop,
+  Box,
+  Button,
+  CircularProgress,
+  Container,
+  Grid,
+  IconButton,
+  ImageList,
+  ImageListItem,
+  Modal,
+  Snackbar,
+  Stack,
+  TextField,
+  Typography,
+} from "@mui/material";
+import React from "react";
 import axios from "axios";
-import React, { useEffect, useState } from "react";
+import { LoadingButton } from "@mui/lab";
 import diceAnimation from "./dice.gif";
+
+interface WowProps {}
+interface WowState {
+  emojiName: string;
+  errorMessage: string;
+  hasError: boolean;
+  hasUploadedImage: boolean;
+  hasWowifiedImage: boolean;
+  isUploading: boolean;
+  loadingColor: { color: string; r: number; g: number; b: number };
+  loadingQuote: string;
+  originalImage: string;
+  originalImageFile?: File;
+  timers: {
+    rgbTimer?: ReturnType<typeof setTimeout>;
+    quoteTimer?: ReturnType<typeof setTimeout>;
+    pollTimer?: ReturnType<typeof setTimeout>;
+  };
+  wowifiedImage: {
+    original: string;
+    small: string;
+  };
+  wowifySettings: {
+    isModalOpen: boolean;
+    selectedBackground: string;
+    thumbnails: { [key: string]: string };
+  };
+}
 
 const modalStyle = {
   position: "absolute" as "absolute",
@@ -36,108 +66,453 @@ const modalStyle = {
   p: 2,
 };
 
-export default function Wow() {
-  const [emojiName, setEmojiName] = useState("wow-emoji");
-  const [errorMessage, setErrorMessage] = useState("");
-  const [hasError, setHasError] = useState(false);
-  const [hasUploadedImage, setHasUploadedImage] = useState(false);
-  const [hasWowifiedImage, setHasWowifiedImage] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
-  const [loadingColor, setLoadingColor] = useState<{
-    color: string;
-    r: number;
-    g: number;
-    b: number;
-  }>({ color: "rgb(255,0,0)", r: 255, g: 0, b: 0 });
-  const [loadingQuote, setLoadingQuote] = useState("");
-  const [originalImage, setOriginalImage] = useState("");
-  const [originalImageFile, setOriginalImageFile] = useState<File>();
-  const [timers, setTimers] = useState<{
-    rgbTimer: number;
-    quoteTimer: number;
-    pollTimer: number;
-  }>({ rgbTimer: 0, quoteTimer: 0, pollTimer: 0 });
-  const [wowifiedImage, setWowifiedImage] = useState<{
-    original: string;
-    small: string;
-  }>({
-    original: "",
-    small: "",
-  });
-  const [wowifySettings, setWowifySettings] = useState<{
-    isModalOpen: boolean;
-    selectedBackground: string;
-    thumbnails: {};
-  }>({
-    isModalOpen: false,
-    selectedBackground: "",
-    thumbnails: {},
-  });
+export default class Wow extends React.Component<WowProps, WowState> {
+  constructor(props: WowProps) {
+    super(props);
+
+    this.state = {
+      emojiName: "wow-emoji",
+      errorMessage: "",
+      hasError: false,
+      hasUploadedImage: false,
+      hasWowifiedImage: false,
+      isUploading: false,
+      loadingColor: { color: "rgb(255,0,0)", r: 255, g: 0, b: 0 },
+      loadingQuote: "",
+      originalImage: "",
+      timers: {},
+      wowifiedImage: {
+        original: "",
+        small: "",
+      },
+      wowifySettings: {
+        isModalOpen: false,
+        selectedBackground: "",
+        thumbnails: {},
+      },
+    };
+
+    this.generateRGBColor = this.generateRGBColor.bind(this);
+    this.generateFunnyQuote = this.generateFunnyQuote.bind(this);
+    this.handleEmojiNameChange = this.handleEmojiNameChange.bind(this);
+    this.handleErrorClose = this.handleErrorClose.bind(this);
+    this.handleImageUpload = this.handleImageUpload.bind(this);
+    this.handleSettingsModalOpen = this.handleSettingsModalOpen.bind(this);
+    this.handleSettingsModalClose = this.handleSettingsModalClose.bind(this);
+    this.handleSettingsModalSetBackground =
+      this.handleSettingsModalSetBackground.bind(this);
+    this.restart = this.restart.bind(this);
+    this.saveImages = this.saveImages.bind(this);
+    this.wowifyImage = this.wowifyImage.bind(this);
+  }
 
   // Grab the thumbnails from the backend
-  useEffect(() => {
-    async function fetch() {
-      var response = await axios.get(`https://backend.wowemoji.dev`, {
-        params: { thumbnails: true },
-        validateStatus: (status: number) => {
-          return status === 200 || status === 404;
-        },
-      });
+  async componentDidMount(): Promise<void> {
+    var response = await axios.get(`https://backend.wowemoji.dev`, {
+      params: { thumbnails: true },
+      validateStatus: (status: number) => {
+        return status === 200 || status === 404;
+      },
+    });
 
-      setWowifySettings({
-        ...wowifySettings,
+    this.setState({
+      wowifySettings: {
+        ...this.state.wowifySettings,
         thumbnails: response.data.thumbnails,
-      });
-    }
+      },
+    });
+  }
 
-    fetch();
-  }, []);
+  render() {
+    const {
+      emojiName,
+      errorMessage,
+      hasError,
+      hasUploadedImage,
+      hasWowifiedImage,
+      isUploading,
+      loadingColor,
+      loadingQuote,
+      originalImage,
+      wowifiedImage,
+      wowifySettings,
+    } = this.state;
+
+    return (
+      <Container
+        maxWidth="xl"
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "100%",
+          flexDirection: "column",
+          flexGrow: "1",
+        }}
+      >
+        {/* Upload / Display */}
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            pb: 2,
+            position: "relative",
+          }}
+        >
+          {/* Display upload form if nothing has been uploaded */}
+          {!hasUploadedImage ? (
+            <label htmlFor="contained-button-file">
+              <input
+                hidden
+                accept="image/*"
+                id="contained-button-file"
+                type="file"
+                onChange={this.handleImageUpload}
+              />
+              <LoadingButton
+                variant="contained"
+                component="span"
+                loading={isUploading}
+                startIcon={<Upload />}
+                loadingPosition="start"
+              >
+                Upload Image
+              </LoadingButton>
+            </label>
+          ) : null}
+
+          {/* Display uploaded image if there's no wowified image */}
+          {hasUploadedImage && !hasWowifiedImage ? (
+            <Box sx={{ position: "relative" }}>
+              {/* Uploaded image */}
+              <img
+                src={originalImage}
+                alt="uploaded"
+                style={{ objectFit: "cover" }}
+                width={250}
+                height={250}
+              />
+
+              {/* Overlay restart button */}
+              <IconButton
+                sx={{ position: "absolute", right: "0px" }}
+                onClick={this.restart}
+              >
+                <Close />
+              </IconButton>
+            </Box>
+          ) : null}
+
+          {/* Display wowified image */}
+          {hasWowifiedImage ? (
+            <img
+              src={`data:image/gif;base64,${wowifiedImage.original}`}
+              alt="wowified"
+              width={250}
+              height={250}
+            />
+          ) : null}
+
+          {/* Loading Overlay */}
+          <Backdrop
+            sx={{
+              color: "#fff",
+              zIndex: (theme) => theme.zIndex.drawer + 1,
+              display: "flex",
+              flexDirection: "column",
+            }}
+            open={isUploading}
+          ></Backdrop>
+
+          {/* Loading Indicator */}
+          {isUploading ? (
+            <Container
+              sx={{
+                alignItems: "center",
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "center",
+                position: "absolute",
+                textAlign: "center",
+                zIndex: (theme) => theme.zIndex.drawer + 2,
+              }}
+            >
+              <CircularProgress sx={{ color: loadingColor }} />
+              <Typography sx={{ pt: 2 }} variant="caption" color="white">
+                {loadingQuote ?? " "}
+              </Typography>
+            </Container>
+          ) : null}
+        </Box>
+
+        {/* Error Toast */}
+        <Snackbar
+          action={
+            <IconButton
+              size="small"
+              aria-label="close"
+              color="inherit"
+              onClick={this.handleErrorClose}
+            >
+              <Clear fontSize="small" />
+            </IconButton>
+          }
+          open={hasError}
+          onClose={this.handleErrorClose}
+          autoHideDuration={4000}
+          message={errorMessage}
+        />
+
+        {/* Settings Modal */}
+        <Modal
+          open={wowifySettings.isModalOpen}
+          onClose={this.handleSettingsModalClose}
+        >
+          <Box sx={modalStyle}>
+            <Grid container>
+              {/* Header: Title and Close Icon */}
+              <Grid container size={12} sx={{ pb: 1 }}>
+                {/* Title */}
+                <Grid size={10} sx={{ pl: 1 }} alignSelf="center">
+                  <Typography>Select background</Typography>
+                </Grid>
+                {/* Close Icon */}
+                <Grid
+                  container
+                  size={2}
+                  justifyContent="flex-end"
+                  alignSelf="center"
+                >
+                  <IconButton onClick={this.handleSettingsModalClose}>
+                    <Close />
+                  </IconButton>
+                </Grid>
+              </Grid>
+
+              {/* Image List */}
+              <Grid container size={12}>
+                <ImageList
+                  cols={3}
+                  rowHeight={96}
+                  sx={{ height: 328, width: "100%" }}
+                >
+                  {/* Random Option (default) */}
+                  <ImageListItem
+                    sx={{
+                      position: "relative",
+                      "&:hover": {
+                        bgcolor: "white",
+                        opacity: 0.5,
+                      },
+                    }}
+                  >
+                    <img
+                      src={diceAnimation}
+                      alt="🎲"
+                      style={{
+                        width: "100%",
+                        position: "absolute",
+                        opacity:
+                          wowifySettings.selectedBackground === "" ? 0.6 : 1,
+                      }}
+                      onClick={() => {
+                        this.handleSettingsModalSetBackground("");
+                      }}
+                    />
+                    {wowifySettings.selectedBackground === "" ? (
+                      <CheckCircleTwoTone sx={{ position: "absolute" }} />
+                    ) : null}
+                  </ImageListItem>
+
+                  {/* Available GIFs on the backend */}
+                  {Object.entries(wowifySettings.thumbnails).map(
+                    ([key, value]) => {
+                      return (
+                        <ImageListItem
+                          sx={{
+                            position: "relative",
+                            "&:hover": {
+                              bgcolor: "gray",
+                              opacity: 0.5,
+                            },
+                          }}
+                        >
+                          <img
+                            src={`data:image/png;base64,${value}`}
+                            alt="thumbnail"
+                            style={{
+                              height: "100%",
+                              position: "absolute",
+                              opacity:
+                                wowifySettings.selectedBackground === key
+                                  ? 0.6
+                                  : 1,
+                            }}
+                            onClick={() => {
+                              this.handleSettingsModalSetBackground(key);
+                            }}
+                          />
+                          {wowifySettings.selectedBackground === key ? (
+                            <CheckCircleTwoTone sx={{ position: "absolute" }} />
+                          ) : null}
+                        </ImageListItem>
+                      );
+                    }
+                  )}
+                </ImageList>
+              </Grid>
+            </Grid>
+          </Box>
+        </Modal>
+
+        {/* Wowify Button */}
+        {/* Only show if image has been uploaded but not wowified */}
+        {hasUploadedImage && !hasWowifiedImage ? (
+          <Box sx={{ display: "flex", justifyContent: "center", pt: 2 }}>
+            <Button
+              color="primary"
+              onClick={this.wowifyImage}
+              variant="contained"
+              startIcon={"🌈"}
+            >
+              Wowify Image
+            </Button>
+            <IconButton
+              sx={{ ml: 1 }}
+              onClick={this.handleSettingsModalOpen}
+              color={
+                wowifySettings.selectedBackground === ""
+                  ? "default"
+                  : "secondary"
+              }
+            >
+              <Settings />
+            </IconButton>
+          </Box>
+        ) : null}
+
+        {/* Emoji Name and Download */}
+        {/* Only show if image has been wowified */}
+        {hasWowifiedImage ? (
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "center",
+              pt: 2,
+            }}
+          >
+            {/* Emoji Name */}
+            <TextField
+              id="standard-basic"
+              label=":emoji-name:"
+              variant="outlined"
+              size="small"
+              value={emojiName}
+              onChange={this.handleEmojiNameChange}
+            />
+
+            <Stack direction="row" spacing={2} sx={{ pt: 2 }}>
+              {/* Download Button */}
+              <Button
+                color="primary"
+                variant="contained"
+                onClick={this.saveImages}
+                startIcon={<Download aria-label="download" />}
+              >
+                Download
+              </Button>
+
+              {/* Reset Button */}
+              <Button
+                color="error"
+                variant="contained"
+                onClick={this.restart}
+                startIcon={<Clear aria-label="restart" />}
+              >
+                Restart
+              </Button>
+            </Stack>
+
+            {/* Only show Rewowify if you selected the random background option */}
+            {wowifySettings.selectedBackground === "" ? (
+              <Stack
+                direction="row"
+                spacing={2}
+                justifyContent="center"
+                alignItems="center"
+                sx={{ pt: 2 }}
+              >
+                <Button
+                  color="secondary"
+                  onClick={this.wowifyImage}
+                  variant="contained"
+                  startIcon={"🎲"}
+                >
+                  Rewowify Image
+                </Button>
+              </Stack>
+            ) : null}
+          </Box>
+        ) : null}
+      </Container>
+    );
+  }
 
   // Upload image to website and store information
-  const handleImageUpload = async (
-    event: React.FormEvent<HTMLInputElement>
-  ) => {
+  async handleImageUpload(event: React.FormEvent<HTMLInputElement>) {
     if (event.currentTarget.files === null) {
       return;
     }
 
     const fileSizeKiloBytes = event.currentTarget.files[0].size / 1000;
     if (fileSizeKiloBytes > 5000) {
-      setErrorMessage("🙊 Oh no, your file is larger than 5MB!");
-      setHasError(true);
+      this.setState({
+        hasError: true,
+        errorMessage: "🙊 Oh no, your file is larger than 5MB!",
+      });
       return;
     }
 
-    setEmojiName(`wow-${event.currentTarget.files[0].name.split(".")[0]}`);
-    setHasUploadedImage(true);
-    setOriginalImageFile(event.currentTarget.files[0]);
-    setOriginalImage(URL.createObjectURL(event.currentTarget.files[0]));
-  };
+    this.setState({
+      emojiName: `wow-${event.currentTarget.files[0].name.split(".")[0]}`,
+      hasUploadedImage: true,
+      originalImageFile: event.currentTarget.files[0],
+      originalImage: URL.createObjectURL(event.currentTarget.files[0]),
+    });
+  }
 
   // Save emoji name
-  const handleEmojiNameChange = (
-    event: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    setEmojiName(event.currentTarget.value);
-  };
+  handleEmojiNameChange(event: React.ChangeEvent<HTMLInputElement>) {
+    this.setState({
+      emojiName: event.currentTarget.value,
+    });
+  }
 
   // Upload image to backend for wowification
-  const wowifyImage = async () => {
-    if (!originalImageFile) {
-      return;
-    }
+  async wowifyImage() {
+    const { originalImageFile, wowifySettings } = this.state;
+
+    if (!originalImageFile) return;
 
     const rgbTimer = setInterval(() => {
-      generateRGBColor();
+      this.generateRGBColor();
     }, 25);
 
     const quoteTimer = setInterval(() => {
-      generateFunnyQuote();
+      this.generateFunnyQuote();
     }, 6000);
 
-    setTimers({ ...timers, rgbTimer, quoteTimer });
-    setLoadingQuote("");
-    setIsUploading(true);
+    this.setState({
+      isUploading: true,
+      loadingQuote: "",
+      timers: {
+        ...this.state.timers,
+        rgbTimer: rgbTimer,
+        quoteTimer: quoteTimer,
+      },
+    });
 
     try {
       var response = await axios.put(
@@ -150,40 +525,52 @@ export default function Wow() {
       var token = response.data.token;
 
       const pollTimer = setInterval(() => {
-        pollWowifiedAPI(token);
+        this.pollWowifiedAPI(token);
       }, 5000);
 
-      setTimers({ ...timers, pollTimer });
+      this.setState({
+        timers: {
+          ...this.state.timers,
+          pollTimer: pollTimer,
+        },
+      });
     } catch (e) {
       // There was an error submitting image to backend, clear timers and reset state
-      setErrorMessage(
-        "🙈 Uh oh, something went wrong -- sorry! Try again soon"
-      );
-      setHasWowifiedImage(false);
-      setIsUploading(false);
-      setHasError(true);
+      this.setState({
+        errorMessage: "🙈 Uh oh, something went wrong -- sorry! Try again soon",
+        hasError: true,
+        hasWowifiedImage: false,
+        isUploading: false,
+      });
 
       clearInterval(rgbTimer);
       clearInterval(quoteTimer);
-      clearInterval(timers.pollTimer);
+      clearInterval(this.state.timers.pollTimer);
     }
-  };
+  }
 
   // Save images to local machine
-  const saveImages = async () => {
+  async saveImages() {
+    const { emojiName } = this.state;
+    const { small } = this.state.wowifiedImage;
+
     const a = document.createElement("a");
-    a.href = "data:image/webp;base64," + wowifiedImage.small;
+    a.href = "data:image/webp;base64," + small;
     a.download = `${emojiName}.webp`;
     a.click();
-  };
+  }
 
   // Handler for closing error toast
-  const handleErrorClose = () => {
-    setHasError(false);
-  };
+  handleErrorClose() {
+    this.setState({
+      hasError: false,
+    });
+  }
 
   // Poll backend API for result
-  const pollWowifiedAPI = async (token: string) => {
+  async pollWowifiedAPI(token: string) {
+    const { rgbTimer, quoteTimer, pollTimer } = this.state.timers;
+
     try {
       var response = await axios.get(`https://backend.wowemoji.dev`, {
         params: { wowToken: token },
@@ -194,31 +581,35 @@ export default function Wow() {
 
       // Image was processed 🎉
       if (response.status === 200) {
-        setWowifiedImage({
-          original: response.data.wowifiedOriginal,
-          small: response.data.wowifiedSmall,
+        this.setState({
+          hasWowifiedImage: true,
+          isUploading: false,
+          wowifiedImage: {
+            original: response.data.wowifiedOriginal,
+            small: response.data.wowifiedSmall,
+          },
         });
-        setHasWowifiedImage(true);
-        setIsUploading(false);
 
-        clearInterval(timers.rgbTimer);
-        clearInterval(timers.quoteTimer);
-        clearInterval(timers.pollTimer);
+        clearInterval(rgbTimer);
+        clearInterval(quoteTimer);
+        clearInterval(pollTimer);
       }
     } catch (e) {
-      setHasError(true);
-      setHasWowifiedImage(false);
-      setIsUploading(false);
+      this.setState({
+        hasError: true,
+        hasWowifiedImage: false,
+        isUploading: false,
+      });
 
-      clearInterval(timers.rgbTimer);
-      clearInterval(timers.quoteTimer);
-      clearInterval(timers.pollTimer);
+      clearInterval(rgbTimer);
+      clearInterval(quoteTimer);
+      clearInterval(pollTimer);
     }
-  };
+  }
 
   // RGB generator for loading icon
-  const generateRGBColor = () => {
-    let { r, g, b } = loadingColor;
+  generateRGBColor() {
+    let { r, g, b } = this.state.loadingColor;
 
     if (r === 255 && g !== 255 && b === 0) {
       g += 5;
@@ -244,16 +635,18 @@ export default function Wow() {
       b -= 5;
     }
 
-    setLoadingColor({
-      color: `rgb(${r}, ${g}, ${b})`,
-      r: r,
-      g: g,
-      b: b,
+    this.setState({
+      loadingColor: {
+        color: `rgb(${r}, ${g}, ${b})`,
+        r: r,
+        g: g,
+        b: b,
+      },
     });
-  };
+  }
 
   // Quotes displayed during loading screen
-  const generateFunnyQuote = () => {
+  generateFunnyQuote() {
     const randomNumber = Math.floor(Math.random() * 1024);
     const securityCode = Math.floor(Math.random() * 999999);
     const quotes = [
@@ -375,351 +768,42 @@ export default function Wow() {
       `Approximately ${randomNumber} hours remaining`,
     ];
 
-    setLoadingQuote(quotes[Math.floor(Math.random() * quotes.length)]);
-  };
+    this.setState({
+      loadingQuote: quotes[Math.floor(Math.random() * quotes.length)],
+    });
+  }
 
   // Reset page state to beginning
-  const restart = () => {
-    setEmojiName("wow-emoji");
-    setHasError(false);
-    setHasUploadedImage(false);
-    setHasWowifiedImage(false);
-    setIsUploading(false);
-    setLoadingQuote("");
-    setOriginalImage("");
-    setOriginalImageFile(undefined);
-    setWowifiedImage({ original: "", small: "" });
-  };
+  restart() {
+    this.setState({
+      emojiName: "wow-emoji",
+      hasError: false,
+      hasUploadedImage: false,
+      hasWowifiedImage: false,
+      isUploading: false,
+      loadingQuote: "",
+      originalImage: "",
+      wowifiedImage: { original: "", small: "" },
+      originalImageFile: undefined,
+    });
+  }
 
   // Handle settings modal open
-  const handleSettingsModalOpen = () => {
-    setWowifySettings({ ...wowifySettings, isModalOpen: true });
-  };
+  handleSettingsModalOpen() {
+    this.setState({
+      wowifySettings: { ...this.state.wowifySettings, isModalOpen: true },
+    });
+  }
 
-  const handleSettingsModalClose = () => {
-    setWowifySettings({ ...wowifySettings, isModalOpen: false });
-  };
+  handleSettingsModalClose() {
+    this.setState({
+      wowifySettings: { ...this.state.wowifySettings, isModalOpen: false },
+    });
+  }
 
-  const handleSettingsModalSetBackground = (key: string) => {
-    setWowifySettings({ ...wowifySettings, selectedBackground: key });
-  };
-
-  return (
-    <Container
-      maxWidth="xl"
-      sx={{
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        height: "100%",
-        flexDirection: "column",
-        flexGrow: "1",
-      }}
-    >
-      {/* Upload / Display */}
-      <Box
-        sx={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          pb: 2,
-          position: "relative",
-        }}
-      >
-        {/* Display upload form if nothing has been uploaded */}
-        {!hasUploadedImage ? (
-          <label htmlFor="contained-button-file">
-            <input
-              hidden
-              accept="image/*"
-              id="contained-button-file"
-              type="file"
-              onChange={handleImageUpload}
-            />
-            <LoadingButton
-              variant="contained"
-              component="span"
-              loading={isUploading}
-              startIcon={<Upload />}
-              loadingPosition="start"
-            >
-              Upload Image
-            </LoadingButton>
-          </label>
-        ) : null}
-
-        {/* Display uploaded image if there's no wowified image */}
-        {hasUploadedImage && !hasWowifiedImage ? (
-          <Box sx={{ position: "relative" }}>
-            {/* Uploaded image */}
-            <img
-              src={originalImage}
-              alt="uploaded"
-              style={{ objectFit: "cover" }}
-              width={250}
-              height={250}
-            />
-
-            {/* Overlay restart button */}
-            <IconButton
-              sx={{ position: "absolute", right: "0px" }}
-              onClick={restart}
-            >
-              <Close />
-            </IconButton>
-          </Box>
-        ) : null}
-
-        {/* Display wowified image */}
-        {hasWowifiedImage ? (
-          <img
-            src={`data:image/gif;base64,${wowifiedImage.original}`}
-            alt="wowified"
-            width={250}
-            height={250}
-          />
-        ) : null}
-
-        {/* Loading Overlay */}
-        <Backdrop
-          sx={{
-            color: "#fff",
-            zIndex: (theme) => theme.zIndex.drawer + 1,
-            display: "flex",
-            flexDirection: "column",
-          }}
-          open={isUploading}
-        ></Backdrop>
-
-        {/* Loading Indicator */}
-        {isUploading ? (
-          <Container
-            sx={{
-              alignItems: "center",
-              display: "flex",
-              flexDirection: "column",
-              justifyContent: "center",
-              position: "absolute",
-              textAlign: "center",
-              zIndex: (theme) => theme.zIndex.drawer + 2,
-            }}
-          >
-            <CircularProgress sx={{ color: loadingColor }} />
-            <Typography sx={{ pt: 2 }} variant="caption" color="white">
-              {loadingQuote ?? " "}
-            </Typography>
-          </Container>
-        ) : null}
-      </Box>
-
-      {/* Error Toast */}
-      <Snackbar
-        action={
-          <IconButton
-            size="small"
-            aria-label="close"
-            color="inherit"
-            onClick={handleErrorClose}
-          >
-            <Clear fontSize="small" />
-          </IconButton>
-        }
-        open={hasError}
-        onClose={handleErrorClose}
-        autoHideDuration={4000}
-        message={errorMessage}
-      />
-
-      {/* Settings Modal */}
-      <Modal
-        open={wowifySettings.isModalOpen}
-        onClose={handleSettingsModalClose}
-      >
-        <Box sx={modalStyle}>
-          <Grid container>
-            {/* Header: Title and Close Icon */}
-            <Grid container size={12} sx={{ pb: 1 }}>
-              {/* Title */}
-              <Grid size={10} sx={{ pl: 1 }} alignSelf="center">
-                <Typography>Select background</Typography>
-              </Grid>
-              {/* Close Icon */}
-              <Grid
-                container
-                size={2}
-                justifyContent="flex-end"
-                alignSelf="center"
-              >
-                <IconButton onClick={handleSettingsModalClose}>
-                  <Close />
-                </IconButton>
-              </Grid>
-            </Grid>
-
-            {/* Image List */}
-            <Grid container size={12}>
-              <ImageList
-                cols={3}
-                rowHeight={96}
-                sx={{ height: 328, width: "100%" }}
-              >
-                {/* Random Option (default) */}
-                <ImageListItem
-                  sx={{
-                    position: "relative",
-                    "&:hover": {
-                      bgcolor: "white",
-                      opacity: 0.5,
-                    },
-                  }}
-                >
-                  <img
-                    src={diceAnimation}
-                    alt="🎲"
-                    style={{
-                      width: "100%",
-                      position: "absolute",
-                      opacity:
-                        wowifySettings.selectedBackground === "" ? 0.6 : 1,
-                    }}
-                    onClick={() => {
-                      handleSettingsModalSetBackground("");
-                    }}
-                  />
-                  {wowifySettings.selectedBackground === "" ? (
-                    <CheckCircleTwoTone sx={{ position: "absolute" }} />
-                  ) : null}
-                </ImageListItem>
-
-                {/* Available GIFs on the backend */}
-                {Object.entries(wowifySettings.thumbnails).map(
-                  ([key, value]) => {
-                    return (
-                      <ImageListItem
-                        sx={{
-                          position: "relative",
-                          "&:hover": {
-                            bgcolor: "gray",
-                            opacity: 0.5,
-                          },
-                        }}
-                      >
-                        <img
-                          src={`data:image/png;base64,${value}`}
-                          alt="thumbnail"
-                          style={{
-                            height: "100%",
-                            position: "absolute",
-                            opacity:
-                              wowifySettings.selectedBackground === key
-                                ? 0.6
-                                : 1,
-                          }}
-                          onClick={() => {
-                            handleSettingsModalSetBackground(key);
-                          }}
-                        />
-                        {wowifySettings.selectedBackground === key ? (
-                          <CheckCircleTwoTone sx={{ position: "absolute" }} />
-                        ) : null}
-                      </ImageListItem>
-                    );
-                  }
-                )}
-              </ImageList>
-            </Grid>
-          </Grid>
-        </Box>
-      </Modal>
-
-      {/* Wowify Button */}
-      {/* Only show if image has been uploaded but not wowified */}
-      {hasUploadedImage && !hasWowifiedImage ? (
-        <Box sx={{ display: "flex", justifyContent: "center", pt: 2 }}>
-          <Button
-            color="primary"
-            onClick={wowifyImage}
-            variant="contained"
-            startIcon={"🌈"}
-          >
-            Wowify Image
-          </Button>
-          <IconButton
-            sx={{ ml: 1 }}
-            onClick={handleSettingsModalOpen}
-            color={
-              wowifySettings.selectedBackground === "" ? "default" : "secondary"
-            }
-          >
-            <Settings />
-          </IconButton>
-        </Box>
-      ) : null}
-
-      {/* Emoji Name and Download */}
-      {/* Only show if image has been wowified */}
-      {hasWowifiedImage ? (
-        <Box
-          sx={{
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "center",
-            pt: 2,
-          }}
-        >
-          {/* Emoji Name */}
-          <TextField
-            id="standard-basic"
-            label=":emoji-name:"
-            variant="outlined"
-            size="small"
-            value={emojiName}
-            onChange={handleEmojiNameChange}
-          />
-
-          <Stack direction="row" spacing={2} sx={{ pt: 2 }}>
-            {/* Download Button */}
-            <Button
-              color="primary"
-              variant="contained"
-              onClick={saveImages}
-              startIcon={<Download aria-label="download" />}
-            >
-              Download
-            </Button>
-
-            {/* Reset Button */}
-            <Button
-              color="error"
-              variant="contained"
-              onClick={restart}
-              startIcon={<Clear aria-label="restart" />}
-            >
-              Restart
-            </Button>
-          </Stack>
-
-          {/* Only show Rewowify if you selected the random background option */}
-          {wowifySettings.selectedBackground === "" ? (
-            <Stack
-              direction="row"
-              spacing={2}
-              justifyContent="center"
-              alignItems="center"
-              sx={{ pt: 2 }}
-            >
-              <Button
-                color="secondary"
-                onClick={wowifyImage}
-                variant="contained"
-                startIcon={"🎲"}
-              >
-                Rewowify Image
-              </Button>
-            </Stack>
-          ) : null}
-        </Box>
-      ) : null}
-    </Container>
-  );
+  handleSettingsModalSetBackground(key: string) {
+    this.setState({
+      wowifySettings: { ...this.state.wowifySettings, selectedBackground: key },
+    });
+  }
 }
