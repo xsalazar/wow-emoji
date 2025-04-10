@@ -1,7 +1,7 @@
 import Footer from "./Components/footer";
 import Wow from "./Components/wow";
 
-function App() {
+export default function App() {
   return (
     <div
       style={{
@@ -16,5 +16,3 @@ function App() {
     </div>
   );
 }
-
-export default App;
