@@ -1,5 +1,5 @@
-import Footer from "./Components/footer";
-import Wow from "./Components/wow";
+import Footer from "./Components/footer.js";
+import Wow from "./Components/wow.js";
 
 export default function App() {
   return (
