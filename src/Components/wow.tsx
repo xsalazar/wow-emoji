@@ -507,7 +507,6 @@ export default function Wow() {
           </Container>
         ) : null}
       </Box>
-
       {/* Error Toast */}
       <Snackbar
         action={
@@ -525,7 +524,6 @@ export default function Wow() {
         autoHideDuration={4000}
         message={errorMessage}
       />
-
       {/* Settings Modal */}
       <Modal
         open={wowifySettings.isModalOpen}
@@ -536,16 +534,22 @@ export default function Wow() {
             {/* Header: Title and Close Icon */}
             <Grid container size={12} sx={{ pb: 1 }}>
               {/* Title */}
-              <Grid size={10} sx={{ pl: 1 }} alignSelf="center">
+              <Grid
+                size={10}
+                sx={{
+                  alignSelf: "center",
+                  pl: 1
+                }}>
                 <Typography>Select background</Typography>
               </Grid>
               {/* Close Icon */}
               <Grid
                 container
                 size={2}
-                justifyContent="flex-end"
-                alignSelf="center"
-              >
+                sx={{
+                  justifyContent: "flex-end",
+                  alignSelf: "center"
+                }}>
                 <IconButton onClick={handleSettingsModalClose}>
                   <Close />
                 </IconButton>
@@ -627,7 +631,6 @@ export default function Wow() {
           </Grid>
         </Box>
       </Modal>
-
       {/* Wowify Button */}
       {/* Only show if image has been uploaded but not wowified */}
       {hasUploadedImage && !hasWowifiedImage ? (
@@ -651,7 +654,6 @@ export default function Wow() {
           </IconButton>
         </Box>
       ) : null}
-
       {/* Emoji Name and Download */}
       {/* Only show if image has been wowified */}
       {hasWowifiedImage ? (
@@ -700,10 +702,11 @@ export default function Wow() {
             <Stack
               direction="row"
               spacing={2}
-              justifyContent="center"
-              alignItems="center"
-              sx={{ pt: 2 }}
-            >
+              sx={{
+                justifyContent: "center",
+                alignItems: "center",
+                pt: 2
+              }}>
               <Button
                 color="secondary"
                 onClick={wowifyImage}
