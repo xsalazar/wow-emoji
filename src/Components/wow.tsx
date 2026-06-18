@@ -92,7 +92,7 @@ export default function Wow() {
 
   // Upload image to website and store information
   const handleImageUpload = async (
-    event: React.FormEvent<HTMLInputElement>
+    event: React.FormEvent<HTMLInputElement>,
   ) => {
     if (event.currentTarget.files === null) {
       return;
@@ -113,7 +113,7 @@ export default function Wow() {
 
   // Save emoji name
   const handleEmojiNameChange = (
-    event: React.ChangeEvent<HTMLInputElement>
+    event: React.ChangeEvent<HTMLInputElement>,
   ) => {
     setEmojiName(event.currentTarget.value);
   };
@@ -139,7 +139,7 @@ export default function Wow() {
       var response = await axios.put(
         `https://backend.wowemoji.dev/`,
         originalImageFile,
-        { params: { backgroundId: wowifySettings.selectedBackground } }
+        { params: { backgroundId: wowifySettings.selectedBackground } },
       );
 
       // Use this token to poll the backend API for result
@@ -151,7 +151,7 @@ export default function Wow() {
     } catch (e) {
       // There was an error submitting image to backend, clear timers and reset state
       setErrorMessage(
-        "🙈 Uh oh, something went wrong -- sorry! Try again soon"
+        "🙈 Uh oh, something went wrong -- sorry! Try again soon",
       );
       setHasWowifiedImage(false);
       setIsUploading(false);
@@ -501,7 +501,7 @@ export default function Wow() {
             }}
           >
             <CircularProgress sx={{ color: loadingColor }} />
-            <Typography sx={{ pt: 2 }} variant="caption" color="white">
+            <Typography sx={{ pt: 2, color: "white" }} variant="caption">
               {loadingQuote ?? " "}
             </Typography>
           </Container>
@@ -538,8 +538,9 @@ export default function Wow() {
                 size={10}
                 sx={{
                   alignSelf: "center",
-                  pl: 1
-                }}>
+                  pl: 1,
+                }}
+              >
                 <Typography>Select background</Typography>
               </Grid>
               {/* Close Icon */}
@@ -548,8 +549,9 @@ export default function Wow() {
                 size={2}
                 sx={{
                   justifyContent: "flex-end",
-                  alignSelf: "center"
-                }}>
+                  alignSelf: "center",
+                }}
+              >
                 <IconButton onClick={handleSettingsModalClose}>
                   <Close />
                 </IconButton>
@@ -624,7 +626,7 @@ export default function Wow() {
                         ) : null}
                       </ImageListItem>
                     );
-                  }
+                  },
                 )}
               </ImageList>
             </Grid>
@@ -705,8 +707,9 @@ export default function Wow() {
               sx={{
                 justifyContent: "center",
                 alignItems: "center",
-                pt: 2
-              }}>
+                pt: 2,
+              }}
+            >
               <Button
                 color="secondary"
                 onClick={wowifyImage}
